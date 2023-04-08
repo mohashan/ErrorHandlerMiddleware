@@ -34,18 +34,7 @@ var forecastSummary = new List<KeyValuePair<int, string>>
     new KeyValuePair<int, string>(9,"Scorching")
 };
 
-app.MapGet("/weatherforecast/{day}", (int day) =>
-{
-    var message = string.Empty;
-    message = day == 0 ? "it's" : "it will be";
-    return Results.Ok(new StandardResponse<KeyValuePair<int,string>>(true, $@"I guess {message} a {forecastSummary[day].Value} day", forecastSummary[day]));
-})
-.WithName("GetWeatherForecast")
+app.MapGet("/weatherforecast/{day}", (int day) => Results.Ok(new StandardResponse<KeyValuePair<int, string>>(true, $"Weather forecasting for {day} day(s) is done", forecastSummary[day])))
 .WithOpenApi();
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
