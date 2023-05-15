@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Net;
+using System.Reflection.Metadata;
 using System.Text.Json;
 
 namespace ErrorHanlding
@@ -15,6 +16,7 @@ namespace ErrorHanlding
 
         public async Task Invoke(HttpContext context)
         {
+            string ERROR_MESSAGE = $"An error has occured while processing your request. Trace Code : {context.TraceIdentifier}";
             try
             {
                 await _next(context);
@@ -26,14 +28,33 @@ namespace ErrorHanlding
 
                 switch (error)
                 {
-                    case FileNotFoundException e:
+                    case FileNotFoundException:
+                    case KeyNotFoundException:
+                    case EntryPointNotFoundException:
+                    case VersionNotFoundException:
                         response.StatusCode = (int)HttpStatusCode.NotFound;
                         break;
-                    case ArgumentOutOfRangeException e:
-                        response.StatusCode = (int)HttpStatusCode.NotFound;
+                    case ArgumentOutOfRangeException:
+                        response.StatusCode = (int)HttpStatusCode.RequestedRangeNotSatisfiable;
                         break;
-                    case ArgumentException e:
+                    case DirectoryNotFoundException:
+                    case ArgumentNullException:
+                    case ArgumentException:
+                    case BadHttpRequestException:
                         response.StatusCode = (int)HttpStatusCode.BadRequest;
+                        break;
+                    case AccessViolationException:
+                    case MemberAccessException:
+                    case TypeAccessException:
+                    case UnauthorizedAccessException:
+                        response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        break;
+
+                    case DllNotFoundException:
+                        response.StatusCode = (int)HttpStatusCode.FailedDependency;
+                        break;
+                    case TimeoutException:
+                        response.StatusCode = (int)HttpStatusCode.RequestTimeout;
                         break;
                     default:
                         // unhandled error
@@ -41,7 +62,7 @@ namespace ErrorHanlding
                         break;
                 }
 
-                var result = JsonSerializer.Serialize(new StandardResponse(false,error?.Message,null)) ;
+                var result = JsonSerializer.Serialize(new StandardResponse(false,ERROR_MESSAGE/*error?.Message*/,null)) ;
                 await response.WriteAsync(result);
             }
         }
